@@ -5,7 +5,9 @@
   {mod, { witcher_dice_app, []}},
   {applications,
    [kernel,
-    stdlib
+    stdlib,
+    cowboy,
+    jsx
    ]},
   {env,[]},
   {modules, []},

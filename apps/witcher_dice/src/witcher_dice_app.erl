@@ -16,6 +16,14 @@
 %%====================================================================
 
 start(_StartType, _StartArgs) ->
+    Dispatch = cowboy_router:compile([
+        {'_', [
+            {"/ping", witcher_dice_api_ping, []}
+        ]}
+    ]),
+    {ok, _} = cowboy:start_http(http, 100, [{port, 8080}], [
+        {env, [{dispatch, Dispatch}]}
+    ]),
     witcher_dice_sup:start_link().
 
 %%--------------------------------------------------------------------
