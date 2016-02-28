@@ -15,7 +15,7 @@
 %  И лишь если и это значение одинаковое, результат считается ничьей.
 
 -module(logic).
--export([turn/0, turn/2, get_result/1]).
+-export([turn/0, turn/2, get_result/1, compare_results/2]).
 
 -record(state, {d1, d2, d3, d4, d5}).
 
@@ -52,7 +52,7 @@ get_result(State = #state{}) ->
     get_result(List, FuncsArray).
 
 get_result(List, [])->
-    {0, false};
+    [0, false];
 
 get_result(List, [F|Tail]) ->
     Res = F(List),
@@ -61,78 +61,91 @@ get_result(List, [F|Tail]) ->
     true ->
 	    Res
     end.
-
-   
-
+ 
 		 
-%compare_results(R1 = #result{}, R2 = #result{})
+% Ничья
+compare_results([0, false], [0, false]) ->		     
+    draw;
 
-% {weight, name, max_value, min_value(optional), [values not in combinations]}
+% сравниваем по весу
+compare_results([H1|_], [H2|_]) when H1 > H2 -> 
+    win1;
+
+compare_results([H1|_], [H2|_]) when H1 < H2 -> 
+    win2;
+
+compare_results([H1|_], [H2|_]) when H1 == H2 -> 
+    % описать более подробные условия, сравнивая значения комбинаций
+    draw.
+
+
+
+% [Вес, название комбинации, максимальное значенеи, минимальное значение(опционально), [значения вне комбинации]]
     
 check_pair([X, X, V1, V2, V3]) ->
-    {1, pair, X*2, [V1, V2, V3]};
+    [1, pair, X*2, [V1, V2, V3]];
 
 check_pair([V1, X, X, V2, V3]) ->
-    {1, pair, X*2, [V1, V2, V3]};
+    [1, pair, X*2, [V1, V2, V3]];
 
 check_pair([V1, V2, X, X, V3]) ->
-    {1, pair, X*2, [V1, V2, V3]};
+    [1, pair, X*2, [V1, V2, V3]];
 
 check_pair([V1,V2, V3, X, X]) ->
-    {1, pair, X*2, [V1, V2, V3]};
+    [1, pair, X*2, [V1, V2, V3]];
 
 check_pair(_) ->
     false.
 
 check_two_pairs([X, X, Y, Y, V1]) ->
-    {2, two_pairs, max(X*2, Y*2), min(X*2, Y*2), [V1]};
+    [2, two_pairs, max(X*2, Y*2), min(X*2, Y*2), [V1]];
 
 check_two_pairs([X, X, V1, Y, Y]) ->
-    {2, two_pairs, max(X*2, Y*2), min(X*2, Y*2), [V1]};
+    [2, two_pairs, max(X*2, Y*2), min(X*2, Y*2), [V1]];
 
 check_two_pairs([V1, X, X, Y, Y]) ->
-    {2, two_pairs, max(X*2, Y*2), min(X*2, Y*2), [V1]};
+    [2, two_pairs, max(X*2, Y*2), min(X*2, Y*2), [V1]];
 
 check_two_pairs(_) ->
     false.
 
 check_set([X, X, X, V1, V2]) ->
-    {3, set, true, X*3, [V1, V2]};
+    [3, set, true, X*3, [V1, V2]];
 
 check_set([V1, X, X, X, V2]) ->
-    {3, set, true, X*3, [V1, V2]};
+    [3, set, true, X*3, [V1, V2]];
 
 check_set([V1, V2, X, X, X]) ->
-    {3, set, true, X*3, [V1, V2]};
+    [3, set, true, X*3, [V1, V2]];
 check_set(_) ->
     false.
 
 check_small_straight([1, 2, 3, 4, 5]) ->
-    {4, small_straight};
+    [4, small_straight];
 check_small_straight(_) ->
     false.
 
 check_big_straight([2, 3, 4, 5, 6]) ->
-    {5, big_straight};
+    [5, big_straight];
 check_big_straight(_) ->
     false.
 
 check_fullhouse([X, X, Y, Y, Y]) ->
-    {6, fullhouse, true, max(X*2, Y*3), min(X*2, Y*3)};
+    [6, fullhouse, true, max(X*2, Y*3), min(X*2, Y*3)];
 check_fullhouse([Y, Y, Y, X, X]) ->
-    {6, fullhouse, true, max(X*2, Y*3), min(X*2, Y*3)};
+    [6, fullhouse, true, max(X*2, Y*3), min(X*2, Y*3)];
 check_fullhouse(_) ->
     false.
     
 check_foak([X, X, X, X, V1]) ->
-    {7, foak, true, X*4, [V1]};
+    [7, foak, true, X*4, [V1]];
 
 check_foak([V1, X, X, X, X]) ->
-    {7, foak, true, X*4, [V1]};
+    [7, foak, true, X*4, [V1]];
 check_foak(_) ->
     false.
 
 check_poker([X, X, X, X, X]) ->
-    {8, poker, (X*5)};
+    [8, poker, (X*5)];
 check_poker(_) ->
     false.
