@@ -1,0 +1,2 @@
+-record(throw_result, {dice1, dice2, dice3, dice4, dice5}).
+-record(throw_result_info, {weight, name, max_sum, min_sum, not_in_combination}).

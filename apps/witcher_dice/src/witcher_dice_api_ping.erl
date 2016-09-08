@@ -6,7 +6,7 @@
 -export([read_json/2]).
 
 init(Req, _Opts) ->
-    {cowboy_rest, Req, undefined}.
+	{cowboy_rest, Req, undefined}.
 
 allowed_methods(Req, State) ->
     {[<<"OPTIONS">>, <<"GET">>], Req, State}.

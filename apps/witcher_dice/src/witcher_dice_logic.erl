@@ -16,16 +16,16 @@
 
 -module(witcher_dice_logic).
 -export([throw/0, rethrow/2, get_result/1, determine_winner/2]).
-
--record(throw_result, {dice1, dice2, dice3, dice4, dice5}).
--record(throw_result_info, {weight, name, max_sum, min_sum, not_in_combination}).
+-include("../include/records.hrl").
 
 throw() ->
-    #throw_result{dice1=crypto:rand_uniform(1, 6),
-	   dice2=crypto:rand_uniform(1, 6),
-	   dice3=crypto:rand_uniform(1, 6),
-	   dice4=crypto:rand_uniform(1, 6),
-	   dice5=crypto:rand_uniform(1, 6)}.
+    #throw_result{
+       dice1=crypto:rand_uniform(1, 6),
+       dice2=crypto:rand_uniform(1, 6),
+       dice3=crypto:rand_uniform(1, 6),
+       dice4=crypto:rand_uniform(1, 6),
+       dice5=crypto:rand_uniform(1, 6)
+      }.
 
 % First argument is list of numbers of player's dices on table
 rethrow([H|List], Throw_Result = #throw_result{}) ->
@@ -58,13 +58,13 @@ get_result(List, [F|Tail]) ->
     Res = F(List),
 
     case Res#throw_result_info.weight of
-	      0 -> get_result(List, Tail);
-	      _ -> Res
+		0 -> get_result(List, Tail);
+		_ -> Res
     end.
 
 % Ничья
 determine_winner(Info1 = #throw_result_info{weight = 0}, Info2 = #throw_result_info{weight = 0}) ->
-    draw;
+	draw;
 
 determine_winner(Info1 = #throw_result_info{name = big_straight}, Info2 = #throw_result_info{name = big_straight}) ->
     draw;
@@ -74,19 +74,19 @@ determine_winner(Info1 = #throw_result_info{name = small_straight}, Info2 = #thr
 
 % сравниваем по весу
 determine_winner(Info1 = #throw_result_info{}, Info2 = #throw_result_info{})
-	when Info1#throw_result_info.weight > Info2#throw_result_info.weight ->
-    win1;
+  when Info1#throw_result_info.weight > Info2#throw_result_info.weight ->
+	  win1;
 
 determine_winner(Info1 = #throw_result_info{}, Info2 = #throw_result_info{})
-  	when Info1#throw_result_info.weight < Info2#throw_result_info.weight ->
-  	win2;
+  when Info1#throw_result_info.weight < Info2#throw_result_info.weight ->
+	  win2;
 
 determine_winner(Info1 = #throw_result_info{}, Info2 = #throw_result_info{})
-  	when Info1#throw_result_info.weight == Info2#throw_result_info.weight ->
-  	determine_winner(Info1, Info2);
+  when Info1#throw_result_info.weight == Info2#throw_result_info.weight ->
+	  determine_winner(Info1, Info2);
 
 determine_winner(Info1 = #throw_result_info{max_sum = X}, Info2 = #throw_result_info{max_sum = Y}) when X > Y ->
-    win1;
+	win1;
 
 determine_winner(Info1 = #throw_result_info{max_sum = X}, Info2 = #throw_result_info{max_sum = Y}) when X < Y ->
     win2;
@@ -149,12 +149,12 @@ check_pair(_) ->
 
 check_two_pairs([X, X, Y, Y, V1]) ->
     #throw_result_info{
-	    weight = 2,
-        name = two_pairs,
-   	 	max_sum = max(X*2, Y*2),
-		min_sum = max(X*2, Y*2),
-		not_in_combination = V1
-	   };
+		 weight = 2,
+		 name = two_pairs,
+		 max_sum = max(X*2, Y*2),
+		 min_sum = max(X*2, Y*2),
+		 not_in_combination = V1
+		};
 
 check_two_pairs([X, X, V1, Y, Y]) ->
     #throw_result_info{
@@ -163,7 +163,7 @@ check_two_pairs([X, X, V1, Y, Y]) ->
 		 max_sum = max(X*2, Y*2),
 		 min_sum = max(X*2, Y*2),
 		 not_in_combination = V1
-	   };
+		};
 
 check_two_pairs([V1, X, X, Y, Y]) ->
     #throw_result_info{
@@ -205,10 +205,10 @@ check_set(_) ->
     #throw_result_info{weight = 0}.
 
 check_small_straight([1, 2, 3, 4, 5]) ->
-    #throw_result_info{
-		      weight = 4,
-		      name = small_straight
-		     };
+	#throw_result_info{
+		weight = 4,
+		name = small_straight
+	   };
 
 check_small_straight(_) ->
     #throw_result_info{weight = 0}.
@@ -224,11 +224,11 @@ check_big_straight(_) ->
 
 check_fullhouse([X, X, Y, Y, Y]) ->
     #throw_result_info{
-		 weight = 6,
-		 name = fullhouse,
-		 max_sum = max(X*2, Y*3),
-		 min_sum = min(X*2, Y*3)
-		};
+		weight = 6,
+		name = fullhouse,
+		max_sum = max(X*2, Y*3),
+		min_sum = min(X*2, Y*3)
+	   };
 
 check_fullhouse([Y, Y, Y, X, X]) ->
     #throw_result_info{
