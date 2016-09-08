@@ -1,5 +1,5 @@
 %  Комбинации по старшинству
-% 
+%
 %  Пара — только на двух кубиках выпали грани одинакового значения
 %  Две пары — на двух кубиках грани одного значения и ещё на двух — другого
 %  Сет(Тройка) — на трёх кубиках грани одного значения
@@ -7,15 +7,15 @@
 %  Фулл-хаус — на трёх кубиках грани одного значения и на двух другого
 %  Каре — одно значение выпало на четырёх кубиках
 %  Покер — одно значение выпало на всех пяти кубиках
-% 
-%  Если у вас одинаковые комбинации, то выигрывает та, у которой значение выше. 
+%
+%  Если у вас одинаковые комбинации, то выигрывает та, у которой значение выше.
 %  В случае со стрейтом большой бьёт малый, в случае с фулл-хаузом и двумя парами считается максимальное из двух значений (а если оно одинаковое, то тогда уже считается минимальное).
-% 
-%  Если у комбинаций совпадает и значение, то выигрывает тот, у кого выпало максимальное значение на кубиках, не входящих в комбинацию. 
+%
+%  Если у комбинаций совпадает и значение, то выигрывает тот, у кого выпало максимальное значение на кубиках, не входящих в комбинацию.
 %  И лишь если и это значение одинаковое, результат считается ничьей.
 
 -module(witcher_dice_logic).
--export([throw/0, rethrow/2, get_result/1, compare_results/2]).
+-export([throw/0, rethrow/2, get_result/1, determine_winner/2]).
 
 -record(throw_result, {dice1, dice2, dice3, dice4, dice5}).
 -record(throw_result_info, {weight, name, max_sum, min_sum, not_in_combination}).
@@ -46,7 +46,7 @@ change(dice5, Throw_Result = #throw_result{}) ->
     Throw_Result#throw_result{dice5 = crypto:rand_uniform(1, 6)}.
 
 get_result(Throw_Result = #throw_result{}) ->
-    FuncsArray = [fun check_poker/1, fun check_foak/1, fun check_fullhouse/1, fun check_big_straight/1, 
+    FuncsArray = [fun check_poker/1, fun check_foak/1, fun check_fullhouse/1, fun check_big_straight/1,
 		  fun check_small_straight/1, fun check_set/1,  fun check_two_pairs/1, fun check_pair/1 ],
     List = lists:sort([Throw_Result#throw_result.dice1, Throw_Result#throw_result.dice2, Throw_Result#throw_result.dice3, Throw_Result#throw_result.dice4, Throw_Result#throw_result.dice5]),
     get_result(List, FuncsArray).
@@ -58,29 +58,60 @@ get_result(List, [F|Tail]) ->
     Res = F(List),
 
     case Res#throw_result_info.weight of
-	0 -> get_result(List, Tail);
-    _ ->
-	    Res
+	      0 -> get_result(List, Tail);
+	      _ -> Res
     end.
- 
-		 
+
 % Ничья
-compare_results(Info1 = #throw_result_info{}, Info2 = #throw_result_info{}) -> 		     
+determine_winner(Info1 = #throw_result_info{weight = 0}, Info2 = #throw_result_info{weight = 0}) ->
+    draw;
+
+determine_winner(Info1 = #throw_result_info{name = big_straight}, Info2 = #throw_result_info{name = big_straight}) ->
+    draw;
+
+determine_winner(Info1 = #throw_result_info{name = small_straight}, Info2 = #throw_result_info{name = small_straight}) ->
     draw;
 
 % сравниваем по весу
-compare_results([H1|_], [H2|_]) when H1 > H2 -> 
+determine_winner(Info1 = #throw_result_info{}, Info2 = #throw_result_info{})
+	when Info1#throw_result_info.weight > Info2#throw_result_info.weight ->
     win1;
 
-compare_results([H1|_], [H2|_]) when H1 < H2 -> 
+determine_winner(Info1 = #throw_result_info{}, Info2 = #throw_result_info{})
+  	when Info1#throw_result_info.weight < Info2#throw_result_info.weight ->
+  	win2;
+
+determine_winner(Info1 = #throw_result_info{}, Info2 = #throw_result_info{})
+  	when Info1#throw_result_info.weight == Info2#throw_result_info.weight ->
+  	determine_winner(Info1, Info2);
+
+determine_winner(Info1 = #throw_result_info{max_sum = X}, Info2 = #throw_result_info{max_sum = Y}) when X > Y ->
+    win1;
+
+determine_winner(Info1 = #throw_result_info{max_sum = X}, Info2 = #throw_result_info{max_sum = Y}) when X < Y ->
     win2;
 
-compare_results([H1|T1], [H2|T2]) when H1 == H2 -> 
-    compare_results([equal|T1], [equal|T2]).
+determine_winner(Info1 = #throw_result_info{max_sum = X}, Info2 = #throw_result_info{max_sum = Y}) when X == Y ->
+    determine_winner(Info1, Info2),
 
+determine_winner(Info1 = #throw_result_info{min_sum = X}, Info2 = #throw_result_info{min_sum = Y}) when X > Y ->
+    win1;
 
-% [Вес, название комбинации, максимальное значенеи, минимальное значение(опционально), [значения вне комбинации]]
-    
+determine_winner(#throw_result_info{min_sum = X}, #throw_result_info{min_sum = Y}) when X < Y ->
+    win2;
+
+determine_winner(Info1 = #throw_result_info{min_sum = X}, Info2 = #throw_result_info{min_sum = Y}) when X == Y ->
+    determine_winner(Info1, Info2);
+
+determine_winner(#throw_result_info{not_in_combination = X}, #throw_result_info{not_in_combination = Y}) when X > Y ->
+    win1;
+
+determine_winner(#throw_result_info{not_in_combination = X}, #throw_result_info{not_in_combination = Y}) when X < Y ->
+    win2;
+
+determine_winner(Info1 = #throw_result_info{not_in_combination = X}, Info2 = #throw_result_info{not_in_combination = Y}) when X == Y ->
+    draw.
+
 check_pair([X, X, V1, V2, V3]) ->
     #throw_result_info{
 	    weight = 1,
@@ -88,7 +119,7 @@ check_pair([X, X, V1, V2, V3]) ->
 	    max_sum = X*2,
 	    not_in_combination = V1 + V2 + V3
 	   };
-	    
+
 check_pair([V1, X, X, V2, V3]) ->
     #throw_result_info{
 	    weight = 1,
@@ -118,11 +149,11 @@ check_pair(_) ->
 
 check_two_pairs([X, X, Y, Y, V1]) ->
     #throw_result_info{
-		 weight = 2,
-		 name = two_pairs,
-		 max_sum = max(X*2, Y*2),
-		 min_sum = max(X*2, Y*2),
-		 not_in_combination = V1
+	    weight = 2,
+        name = two_pairs,
+   	 	max_sum = max(X*2, Y*2),
+		min_sum = max(X*2, Y*2),
+		not_in_combination = V1
 	   };
 
 check_two_pairs([X, X, V1, Y, Y]) ->
@@ -209,7 +240,7 @@ check_fullhouse([Y, Y, Y, X, X]) ->
 
 check_fullhouse(_) ->
     #throw_result_info{weight = 0}.
-    
+
 check_foak([X, X, X, X, V1]) ->
     #throw_result_info{
 	    weight = 7,
