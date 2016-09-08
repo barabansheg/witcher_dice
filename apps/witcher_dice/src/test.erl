@@ -4,7 +4,7 @@
 
 -export([register_me/2]).
 -export([start_link/0, init/1, handle_call/3, terminate/2, shutdown/1,
-         handle_cast/2, handle_info/2, code_change/3]).
+         handle_info/2, code_change/3]).
 
 register_me(ServerRef, PlayerName) ->
 	gen_server:call(ServerRef, {register, PlayerName}).
@@ -34,12 +34,9 @@ terminate(normal, _) ->
     io:format("Okay.~n",[]),
 	ok.
 
-handle_cast({return, Cat}, Cats) ->
-    {noreply, [Cat|Cats]}.
-
-handle_info(Msg, Cats) ->
+handle_info(Msg, State) ->
     io:format("Unexpected message: ~p~n",[Msg]),
-    {noreply, Cats}.
+    {noreply, State}.
 
 code_change(_OldVsn, State, _Extra) ->
     %% No change planned. The function is there for the behaviour,
